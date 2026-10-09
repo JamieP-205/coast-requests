@@ -1,0 +1,278 @@
+/* Coast's navy and red. Green is only used for Played. Large text and big
+   buttons, because Jim uses this mid-show, often on a tablet. */
+:root {
+  --bg: #eef3f8;
+  --card: #fff;
+  --text: #18222e;
+  --muted: #4d5966;
+  --line: #c9d3dd;
+  --navy: #14466b;
+  --navy-deep: #0d3150;
+  --red: #c4362c;
+  --green: #1b7a3d;
+  --green-deep: #135c2d;
+  --font: Verdana, "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 1.125rem/1.5 var(--font);
+}
+
+h1,
+h2,
+p,
+ol {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--navy-deep);
+  outline-offset: 3px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.big-button,
+.played-button {
+  min-height: 3.25rem;
+  padding: 0.5rem 1.5rem;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.big-button {
+  width: 100%;
+  margin-top: 1.5rem;
+  background: var(--navy);
+}
+
+.big-button:hover {
+  background: var(--navy-deep);
+}
+
+.played-button {
+  min-width: 8rem;
+  background: var(--green);
+}
+
+.played-button:hover {
+  background: var(--green-deep);
+}
+
+.quiet-button {
+  min-height: 2.75rem;
+  padding: 0.3rem 1.1rem;
+  border: 2px solid currentcolor;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--navy);
+  font-weight: 700;
+}
+
+/* Sign in */
+
+.sign-in {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 1.25rem;
+  background: var(--navy);
+}
+
+.card {
+  display: grid;
+  width: min(100%, 24rem);
+  padding: 2rem 1.75rem;
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.card h1 {
+  font-size: 1.6rem;
+}
+
+.intro {
+  margin: 0.4rem 0 1rem;
+  color: var(--muted);
+}
+
+.card label {
+  margin-top: 1rem;
+  font-weight: 700;
+}
+
+.card input {
+  min-height: 3rem;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #5b6878;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.problem {
+  padding: 0.75rem 1rem;
+  border-left: 5px solid var(--red);
+  background: #fbeceb;
+  font-weight: 700;
+}
+
+/* The board */
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--navy);
+  color: #fff;
+}
+
+.top-bar h1 {
+  font-size: 1.4rem;
+}
+
+.top-bar .quiet-button {
+  color: #fff;
+}
+
+.top-bar :focus-visible {
+  outline-color: #fff;
+}
+
+.board {
+  display: grid;
+  gap: 2.5rem;
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.board h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+
+.count {
+  min-width: 2.2rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  background: var(--red);
+  color: #fff;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.requests {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.request {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 1px 3px rgb(13 49 80 / 0.12);
+}
+
+.request-text {
+  flex: 1 1 18rem;
+}
+
+.song {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.artist,
+.when {
+  color: var(--muted);
+}
+
+.dedication {
+  margin-top: 0.4rem;
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--navy);
+}
+
+.when {
+  margin-top: 0.4rem;
+  font-size: 1rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.more summary {
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.remove-button {
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border: 2px solid var(--red);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--red);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.played .request {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+
+.played .song {
+  font-size: 1.15rem;
+}
+
+.empty {
+  padding: 1.5rem;
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  text-align: center;
+}

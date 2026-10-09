@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block head %}
+  <script src="{{ url_for('static', filename='refresh.js') }}" defer></script>
+{% endblock %}
+{% block title %}{{ waiting|length }} waiting{% endblock %}
+{% block body %}
+<header class="top-bar">
+  <h1>Song requests</h1>
+  <form method="post" action="{{ url_for('auth.logout') }}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <button class="quiet-button">Sign out</button>
+  </form>
+</header>
+
+<main class="board" data-version="{{ version }}">
+  <section aria-labelledby="waiting-heading">
+    <h2 id="waiting-heading">
+      Waiting
+      <span class="count">{{ waiting|length }}</span>
+    </h2>
+    {% if waiting %}
+      <ol class="requests">
+        {% for song_request in waiting %}
+          <li class="request">
+            <div class="request-text">
+              <p class="song">{{ song_request.song }}</p>
+              {% if song_request.artist %}<p class="artist">by {{ song_request.artist }}</p>{% endif %}
+              {% if song_request.name or song_request.message %}
+                <p class="dedication">
+                  {%- if song_request.name %}From {{ song_request.name }}{% endif -%}
+                  {%- if song_request.name and song_request.message %}: {% endif -%}
+                  {{ song_request.message }}
+                </p>
+              {% endif %}
+              <p class="when">Sent {{ song_request.received_at|uk_when }}</p>
+            </div>
+            <div class="actions">
+              <form method="post" action="{{ url_for('board.mark_played', request_id=song_request.id) }}">
+                <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                <button class="played-button">Played<span class="visually-hidden">: {{ song_request.song }}</span></button>
+              </form>
+              <details class="more">
+                <summary>More<span class="visually-hidden"> for {{ song_request.song }}</span></summary>
+                <form method="post" action="{{ url_for('board.remove', request_id=song_request.id) }}">
+                  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+                  <button class="remove-button">Remove this request</button>
+                </form>
+              </details>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+    {% else %}
+      <p class="empty">No requests waiting. New ones appear here by themselves.</p>
+    {% endif %}
+  </section>
+
+  {% if played %}
+    <section aria-labelledby="played-heading">
+      <h2 id="played-heading">Played recently</h2>
+      <ol class="requests played">
+        {% for song_request in played %}
+          <li class="request">
+            <div class="request-text">
+              <p class="song">{{ song_request.song }}</p>
+              {% if song_request.artist %}<p class="artist">by {{ song_request.artist }}</p>{% endif %}
+              <p class="when">Played {{ song_request.played_at|uk_when }}</p>
+            </div>
+            <form method="post" action="{{ url_for('board.mark_not_played', request_id=song_request.id) }}">
+              <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+              <button class="quiet-button">Not played yet<span class="visually-hidden">: {{ song_request.song }}</span></button>
+            </form>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

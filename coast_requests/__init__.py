@@ -22,14 +22,18 @@ def create_app(test_config=None):
     os.makedirs(app.instance_path, exist_ok=True)
     db.init_app(app)
 
-    from . import webhook
+    from . import auth, board, cli, webhook
 
     app.register_blueprint(webhook.bp)
+    app.register_blueprint(auth.bp)
+    app.register_blueprint(board.bp)
+    auth.protect_forms(app)
+    cli.register(app)
 
     @app.after_request
     def security_headers(response):
         response.headers["Content-Security-Policy"] = (
-            "default-src 'none'; style-src 'self'; img-src 'self'; "
+            "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self'; img-src 'self'; "
             "form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
         )
         response.headers["X-Content-Type-Options"] = "nosniff"
