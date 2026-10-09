@@ -1,8 +1,14 @@
 # Coast Requests
 
+[![Tests](https://github.com/JamieP-205/coast-requests/actions/workflows/test.yml/badge.svg)](https://github.com/JamieP-205/coast-requests/actions/workflows/test.yml)
+
 Song requests from the [Coast Internet Radio](https://coastinternetradio.com) website, in one list Jim can work through during his live shows.
 
 Before this, requests only arrived by email, so Jim had to search his inbox mid-show. Now each request also appears on a board, oldest first, and he taps **Played** as he goes.
+
+![The request board: three song requests waiting with a green Played button beside each, and one under Played recently.](docs/board.webp)
+
+*The board, shown with sample requests.*
 
 ## How it works
 
