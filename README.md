@@ -73,4 +73,4 @@ They cover the webhook signature, duplicate and unwanted submissions, sign-in, C
 
 ## How I use AI on this project
 
-I built this with coding assistance from Claude Code. I set it up, tested it and deployed it.
+I built this in October 2026. Claude Code assisted with coding. The idea came from how Jim was handling requests during his shows. I set up the hosting on PythonAnywhere, connected the Coast website's request form to it with a Netlify webhook, tested it and look after it.
