@@ -1,5 +1,7 @@
 # Coast Requests
 
+[Portfolio case study](https://jamieparr.dev/projects/coast-internet-radio/)
+
 [![Tests](https://github.com/JamieP-205/coast-requests/actions/workflows/test.yml/badge.svg)](https://github.com/JamieP-205/coast-requests/actions/workflows/test.yml)
 
 Song requests from the [Coast Internet Radio](https://coastinternetradio.com) website, in one list Jim can work through during his live shows.
