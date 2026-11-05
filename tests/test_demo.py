@@ -67,3 +67,15 @@ def test_an_expired_board_starts_again_cleanly(demo):
     response = client.get("/")
     assert response.status_code == 302
     assert "demo ended" in client.get("/login").get_data(as_text=True)
+
+
+def test_a_full_demo_makes_room_instead_of_refusing(demo, monkeypatch):
+    import coast_requests.demo as d
+    monkeypatch.setattr(d, "MAX_SANDBOXES", 3)
+    first = start(demo)
+    for _ in range(3):
+        start(demo)
+    sandboxes = demo.extensions["coast_demo_sandboxes"]
+    assert sandboxes.count() == 3
+    # The oldest board was removed to make room, so its visitor starts again cleanly.
+    assert first.get("/").status_code == 302

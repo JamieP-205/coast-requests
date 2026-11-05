@@ -25,9 +25,10 @@ from .models import Base, SongRequest, db, utc_now
 from .webhook import clean
 
 IDLE_SECONDS = 60 * 60
+MAX_AGE_SECONDS = 2 * 60 * 60
 MAX_SANDBOXES = 200
 MAX_REQUESTS = 60
-STARTS_PER_MINUTE = 30
+STARTS_PER_MINUTE = 120
 
 SAMPLE_REQUESTS = [
     ("Jolene", "Dolly Parton", "Maura in Rostrevor", "For my sister, who's on the road today"),
@@ -56,13 +57,18 @@ class Sandboxes:
             self._expire(now)
             while self._starts and self._starts[0] < now - 60:
                 self._starts.popleft()
-            if len(self._starts) >= STARTS_PER_MINUTE or len(self._items) >= MAX_SANDBOXES:
+            if len(self._starts) >= STARTS_PER_MINUTE:
                 return None
+            if len(self._items) >= MAX_SANDBOXES:
+                # Full: the board unused for longest gives way, so a flood of new boards can't lock
+                # visitors out. Boards in use refresh every 20 seconds, so they stay.
+                oldest = min(self._items, key=lambda k: self._items[k]["seen"])
+                self._items.pop(oldest)["engine"].dispose()
             self._starts.append(now)
             engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
             Base.metadata.create_all(engine)
             sandbox_id = secrets.token_urlsafe(18)
-            self._items[sandbox_id] = {"engine": engine, "seen": now, "lock": threading.Lock()}
+            self._items[sandbox_id] = {"engine": engine, "seen": now, "created": now, "lock": threading.Lock()}
             return sandbox_id
 
     def find(self, sandbox_id):
@@ -84,7 +90,8 @@ class Sandboxes:
         return len(self._items)
 
     def _expire(self, now):
-        for key in [k for k, v in self._items.items() if v["seen"] < now - IDLE_SECONDS]:
+        for key in [k for k, v in self._items.items()
+                    if v["seen"] < now - IDLE_SECONDS or v["created"] < now - MAX_AGE_SECONDS]:
             self._items.pop(key)["engine"].dispose()
 
 
