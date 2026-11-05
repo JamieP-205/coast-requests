@@ -276,3 +276,7 @@ button {
   color: var(--muted);
   text-align: center;
 }
+
+/* Public demo only */
+.demo-bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 auto 12px; max-width: 760px; padding: 10px 14px; border: 1px dashed currentColor; border-radius: 8px; }
+.demo-bar p { margin: 0; flex: 1 1 100%; }
