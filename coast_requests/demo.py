@@ -28,7 +28,12 @@ IDLE_SECONDS = 60 * 60
 MAX_AGE_SECONDS = 2 * 60 * 60
 MAX_SANDBOXES = 200
 MAX_REQUESTS = 60
-STARTS_PER_MINUTE = 120
+STARTS_PER_MINUTE = 60
+# Per visitor address (as reported by the hosting proxy).
+CLIENT_STARTS_PER_MINUTE = 6
+CLIENT_LIVE_BOARDS = 10
+# When full, only a board unused for this long can give way. Open boards refresh every 20 seconds.
+EVICT_AFTER_IDLE = 120
 
 SAMPLE_REQUESTS = [
     ("Jolene", "Dolly Parton", "Maura in Rostrevor", "For my sister, who's on the road today"),
@@ -51,24 +56,29 @@ class Sandboxes:
         self._starts = deque()
         self._lock = threading.Lock()
 
-    def create(self):
+    def create(self, client="unknown"):
         now = time.monotonic()
         with self._lock:
             self._expire(now)
-            while self._starts and self._starts[0] < now - 60:
+            while self._starts and self._starts[0][0] < now - 60:
                 self._starts.popleft()
             if len(self._starts) >= STARTS_PER_MINUTE:
                 return None
+            if sum(1 for t, c in self._starts if c == client) >= CLIENT_STARTS_PER_MINUTE:
+                return None
+            if sum(1 for v in self._items.values() if v["client"] == client) >= CLIENT_LIVE_BOARDS:
+                return None
             if len(self._items) >= MAX_SANDBOXES:
-                # Full: the board unused for longest gives way, so a flood of new boards can't lock
-                # visitors out. Boards in use refresh every 20 seconds, so they stay.
-                oldest = min(self._items, key=lambda k: self._items[k]["seen"])
-                self._items.pop(oldest)["engine"].dispose()
-            self._starts.append(now)
+                # Full: a board nobody has used for a while gives way. Boards in use stay.
+                idle = [k for k, v in self._items.items() if v["seen"] < now - EVICT_AFTER_IDLE]
+                if not idle:
+                    return None
+                self._dispose(self._items.pop(min(idle, key=lambda k: self._items[k]["seen"])))
+            self._starts.append((now, client))
             engine = create_engine("sqlite://", poolclass=StaticPool, connect_args={"check_same_thread": False})
             Base.metadata.create_all(engine)
             sandbox_id = secrets.token_urlsafe(18)
-            self._items[sandbox_id] = {"engine": engine, "seen": now, "created": now, "lock": threading.Lock()}
+            self._items[sandbox_id] = {"engine": engine, "seen": now, "created": now, "client": client, "lock": threading.Lock()}
             return sandbox_id
 
     def find(self, sandbox_id):
@@ -84,7 +94,17 @@ class Sandboxes:
         with self._lock:
             item = self._items.pop(sandbox_id, None)
         if item:
+            self._dispose(item)
+
+    @staticmethod
+    def _dispose(item):
+        # Wait for any request still using the board to finish before closing its database.
+        locked = item["lock"].acquire(timeout=5)
+        try:
             item["engine"].dispose()
+        finally:
+            if locked:
+                item["lock"].release()
 
     def count(self):
         return len(self._items)
@@ -92,7 +112,7 @@ class Sandboxes:
     def _expire(self, now):
         for key in [k for k, v in self._items.items()
                     if v["seen"] < now - IDLE_SECONDS or v["created"] < now - MAX_AGE_SECONDS]:
-            self._items.pop(key)["engine"].dispose()
+            self._dispose(self._items.pop(key))
 
 
 class SandboxSession(FlaskSession):
@@ -156,16 +176,25 @@ def create_demo_app():
         if lock is not None:
             lock.release()
 
+    def client_address():
+        # The hosting proxy appends the visitor's address last; earlier entries can be forged.
+        forwarded = [a.strip() for a in request.headers.get("X-Forwarded-For", "").split(",") if a.strip()]
+        return forwarded[-1] if forwarded else (request.remote_addr or "unknown")
+
     @bp.post("/demo/start")
     def start():
-        sandbox_id = sandboxes.create()
+        old = session.get("sandbox")
+        if old:
+            # Starting again replaces this visitor's board rather than adding another.
+            g.pop("sandbox_lock").release()
+            g.pop("sandbox_engine", None)
+            sandboxes.remove(old)
+            session.pop("sandbox", None)
+        sandbox_id = sandboxes.create(client_address())
         if sandbox_id is None:
             flash("The demo is busy right now. Please try again in a minute.")
             return redirect(url_for("auth.login"))
-        old = session.get("sandbox")
         session.clear()
-        if old:
-            sandboxes.remove(old)
         session.permanent = True
         session["signed_in"] = True
         session["sandbox"] = sandbox_id

@@ -69,13 +69,25 @@ def test_an_expired_board_starts_again_cleanly(demo):
     assert "demo ended" in client.get("/login").get_data(as_text=True)
 
 
-def test_a_full_demo_makes_room_instead_of_refusing(demo, monkeypatch):
+def test_a_full_demo_only_replaces_idle_boards(demo, monkeypatch):
     import coast_requests.demo as d
-    monkeypatch.setattr(d, "MAX_SANDBOXES", 3)
-    first = start(demo)
-    for _ in range(3):
-        start(demo)
+    monkeypatch.setattr(d, "MAX_SANDBOXES", 2)
+    first, second = start(demo), start(demo)
     sandboxes = demo.extensions["coast_demo_sandboxes"]
-    assert sandboxes.count() == 3
-    # The oldest board was removed to make room, so its visitor starts again cleanly.
+    newcomer = demo.test_client()
+    page = newcomer.get("/login")
+    # Both boards are in use, so a newcomer is told to wait rather than pushing someone out.
+    assert "busy" in newcomer.post("/demo/start", data={"csrf": csrf(page)}, follow_redirects=True).get_data(as_text=True)
+    monkeypatch.setattr(d, "EVICT_AFTER_IDLE", -1)
+    third = start(demo)
+    assert sandboxes.count() == 2
     assert first.get("/").status_code == 302
+
+
+def test_one_address_cant_take_every_board(demo, monkeypatch):
+    import coast_requests.demo as d
+    monkeypatch.setattr(d, "CLIENT_LIVE_BOARDS", 2)
+    start(demo), start(demo)
+    client = demo.test_client()
+    page = client.get("/login")
+    assert "busy" in client.post("/demo/start", data={"csrf": csrf(page)}, follow_redirects=True).get_data(as_text=True)
