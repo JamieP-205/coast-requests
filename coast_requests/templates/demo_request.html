@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Try a song request{% endblock %}
+{% block body %}
+<header class="top-bar">
+  <h1>Song requests</h1>
+  <a class="quiet-button" href="{{ url_for('board.index') }}">Back to board</a>
+</header>
+<main class="listener-demo">
+  <p class="demo-label">INTERACTIVE DEMO · 1 OF 2</p>
+  <h2>Try a song request</h2>
+  <p>Choose a song, then see it arrive on the presenter's board.</p>
+  <p class="demo-note" id="demo-note">Use made-up details. This only changes your private demo board. Nothing is sent to the station or played on air.</p>
+  {% if error %}<p class="problem" id="form-error" role="alert">{{ error }}</p>{% endif %}
+  <form method="post" action="{{ url_for('demo.listener_request') }}" aria-describedby="demo-note{% if error %} form-error{% endif %}">
+    <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+    <label for="song">Song title <span>(required)</span></label>
+    <input id="song" name="song" value="{{ fields.song }}" maxlength="200" required autocomplete="off"{% if error and not fields.song %} aria-invalid="true" aria-describedby="form-error"{% endif %}>
+    <label for="artist">Artist <span>(optional)</span></label>
+    <input id="artist" name="artist" value="{{ fields.artist }}" maxlength="200" autocomplete="off">
+    <label for="name">Made-up listener name <span>(optional)</span></label>
+    <input id="name" name="name" value="{{ fields.name }}" maxlength="100" autocomplete="off">
+    <label for="message">Dedication <span>(optional)</span></label>
+    <textarea id="message" name="message" maxlength="500" rows="2">{{ fields.message }}</textarea>
+    <button class="big-button">Send to my demo board</button>
+  </form>
+  <p class="demo-note">On the live site, Netlify delivers the request securely to the board and emails the station. This demo skips that delivery step.</p>
+</main>
+{% endblock %}

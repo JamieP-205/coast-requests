@@ -14,9 +14,10 @@
 
 {% if config.DEMO %}
 <aside class="demo-bar" aria-label="Demo">
-  <p><strong>Demo:</strong> fictional requests, private to you. Real requests arrive from the station's website; here you can add a pretend one.</p>
-  {% for message in get_flashed_messages() %}<p class="problem" role="alert">{{ message }}</p>{% endfor %}
-  <form method="post" action="{{ url_for('demo.add') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="quiet-button">Add a listener request</button></form>
+  <p><strong>Presenter's board:</strong> fictional requests, private to you. Try sending a song, then mark it Played below.</p>
+  {% for category, message in get_flashed_messages(with_categories=true) %}<p class="{{ 'success' if category == 'success' else 'problem' }}" role="{{ 'status' if category == 'success' else 'alert' }}">{{ message }}</p>{% endfor %}
+  <a class="quiet-button" href="{{ url_for('demo.listener_request') }}">Try the listener form</a>
+  <form method="post" action="{{ url_for('demo.add') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="quiet-button">Add a sample request</button></form>
   <form method="post" action="{{ url_for('demo.start') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button class="quiet-button">Start again</button></form>
 </aside>
 {% endif %}
@@ -29,7 +30,7 @@
     {% if waiting %}
       <ol class="requests">
         {% for song_request in waiting %}
-          <li class="request">
+          <li class="request" id="request-{{ song_request.id }}" tabindex="-1">
             <div class="request-text">
               <p class="song">{{ song_request.song }}</p>
               {% if song_request.artist %}<p class="artist">by {{ song_request.artist }}</p>{% endif %}
