@@ -1,0 +1,15 @@
+# The public demo on Render's free plan: fictional requests only, no connection to the station (see docs/demo.md).
+services:
+  - type: web
+    name: coast-requests-demo
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: pip install -r requirements.txt -r requirements-demo.txt
+    # One process, so every visitor's in-memory board lives in the same place.
+    startCommand: gunicorn --workers 1 --threads 8 --bind 0.0.0.0:$PORT demo_wsgi:application
+    healthCheckPath: /login
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.9"
