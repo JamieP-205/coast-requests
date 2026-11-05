@@ -14,6 +14,10 @@ Before this, requests only arrived by email, so Jim had to search his inbox mid-
 
 **[Try the demo board](https://coast-requests-demo.onrender.com)**: a separate copy with fictional requests, where each visitor gets their own board. It has no connection to the station, so it can't see real requests or listener details ([how the demo works](docs/demo.md)). It's on Render's free plan, so the first visit after 15 quiet minutes takes about a minute to start.
 
+**Follow a request:** open the demo, choose **Try the listener form**, and enter a song with made-up listener details. Send it to your board, find the outlined request, then choose **Played**. **Not played yet** puts it back in the waiting list if you clicked by mistake.
+
+[Watch the short walkthrough](https://jamieparr.dev/projects/coast-internet-radio/#request-walkthrough) · [What changed and how it was checked](docs/listener-walkthrough.md)
+
 ## How it works
 
 1. A listener fills in the request form on coastinternetradio.com.

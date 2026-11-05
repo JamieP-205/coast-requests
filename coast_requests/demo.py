@@ -16,12 +16,13 @@ import time
 from collections import deque
 from datetime import timedelta
 
-from flask import Blueprint, abort, current_app, flash, g, redirect, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, session, url_for
 from flask_sqlalchemy.session import Session as FlaskSession
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.pool import StaticPool
 
 from . import create_app
+from .auth import login_required
 from .models import Base, SongRequest, db, utc_now
 from .webhook import clean
 
@@ -238,6 +239,27 @@ def create_demo_app():
                                    message="", received_at=utc_now()))
         db.session.commit()
         return redirect(url_for("board.index"))
+
+    @bp.route("/demo/request", methods=["GET", "POST"])
+    @login_required
+    def listener_request():
+        """Try the listener-to-presenter flow without contacting the station."""
+        fields = {key: clean(request.form.get(key), limit) for key, limit in
+                  (("song", 200), ("artist", 200), ("name", 100), ("message", 500))}
+        error = None
+        if request.method == "POST":
+            if not fields["song"]:
+                error = "Enter a song title so the presenter knows what to play."
+            elif db.session.scalar(select(func.count(SongRequest.id))) >= MAX_REQUESTS:
+                error = f"This demo holds up to {MAX_REQUESTS} requests. Go back to the board and use Start again."
+            else:
+                item = SongRequest(netlify_id="demo-" + secrets.token_hex(8),
+                                   received_at=utc_now(), **fields)
+                db.session.add(item)
+                db.session.commit()
+                flash("Your demo request is waiting below. Try Played to move it to Played recently.", "success")
+                return redirect(url_for("board.index", _anchor=f"request-{item.id}"))
+        return render_template("demo_request.html", fields=fields, error=error), 400 if error else 200
 
     @bp.post("/demo/end")
     def end():

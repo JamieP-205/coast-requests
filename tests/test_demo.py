@@ -62,6 +62,69 @@ def test_adding_requests_is_capped(demo):
 def test_forms_still_need_csrf(demo):
     client = start(demo)
     assert client.post("/demo/add").status_code == 400
+    assert client.post("/demo/request", data={"song": "Wildflowers"}).status_code == 400
+
+
+def test_listener_request_arrives_in_own_board_and_can_be_played(demo):
+    alice, bob = start(demo), start(demo)
+    form = alice.get("/demo/request")
+    response = alice.post("/demo/request", data={
+        "csrf": csrf(form), "song": "  Wildflowers  ", "artist": "Tom Petty",
+        "name": "Demo listener", "message": "For everyone finishing work",
+    })
+    assert response.status_code == 302
+    assert "#request-" in response.location
+    request_id = response.location.split("#request-")[1]
+    board = alice.get("/")
+    text = board.get_data(as_text=True)
+    assert "Wildflowers" in text and "For everyone finishing work" in text
+    assert text.index("Forty Shades of Green") < text.index('class="song">Wildflowers')
+    assert "Wildflowers" not in bob.get("/").get_data(as_text=True)
+    played = alice.post(f"/requests/{request_id}/played", data={"csrf": csrf(board)}, follow_redirects=True)
+    text = played.get_data(as_text=True)
+    assert "Wildflowers" not in text.split('id="played-heading"')[0]
+    assert "Wildflowers" in text.split('id="played-heading"')[1]
+
+
+def test_listener_request_requires_a_title_and_keeps_other_fields(demo):
+    client = start(demo)
+    response = client.post("/demo/request", data={
+        "csrf": csrf(client.get("/demo/request")), "song": " \n ", "artist": "Tom Petty",
+    })
+    assert response.status_code == 400
+    text = response.get_data(as_text=True)
+    assert "Enter a song title" in text and 'value="Tom Petty"' in text
+    assert 'class="count">6<' in client.get("/").get_data(as_text=True)
+
+
+def test_listener_request_escapes_input_and_limits_length(demo):
+    client = start(demo)
+    response = client.post("/demo/request", data={
+        "csrf": csrf(client.get("/demo/request")), "song": "x" * 210,
+        "name": '<script>alert("x")</script>', "message": "m" * 510,
+    }, follow_redirects=True)
+    text = response.get_data(as_text=True)
+    assert "x" * 200 in text and "x" * 201 not in text
+    assert "m" * 500 in text and "m" * 501 not in text
+    assert '<script>alert("x")</script>' not in text
+    assert "&lt;script&gt;" in text
+
+
+def test_listener_form_obeys_board_cap(demo, monkeypatch):
+    import coast_requests.demo as d
+    client = start(demo)
+    monkeypatch.setattr(d, "MAX_REQUESTS", 8)
+    response = client.post("/demo/request", data={
+        "csrf": csrf(client.get("/demo/request")), "song": "No room",
+    })
+    assert response.status_code == 400
+    assert "holds up to 8 requests" in response.get_data(as_text=True)
+    assert "No room" not in client.get("/").get_data(as_text=True)
+
+
+def test_listener_demo_is_unavailable_without_demo_session(demo, client):
+    assert demo.test_client().get("/demo/request").status_code == 302
+    assert client.get("/demo/request").status_code == 404
 
 
 def test_an_expired_board_starts_again_cleanly(demo):

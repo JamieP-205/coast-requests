@@ -16,4 +16,12 @@ flask --app coast_requests.demo:create_demo_app run
 
 `tests/test_demo.py` checks private boards, that sign-in and the webhook can't be used, the request cap, CSRF and expiry.
 
+## Listener form
+
+The demo also has a **Try the listener form** link. A visitor can enter a song, optional artist, made-up listener name and dedication, then follow that exact request into the waiting list and mark it played. The form uses the existing cleaning rules and private visitor database. It does not call Netlify, send email or play audio. The station's live listener form and webhook are unchanged.
+
+Blank titles are rejected on the server as well as in the browser. The form keeps other entered fields after an error, escapes submitted text, applies field length limits and observes the existing 60-request cap. A successful submission links directly to the new request without changing the board's oldest-first ordering.
+
+The listener-form update and recorded walkthrough were implemented with Codex on 5 November 2026. See [the change notes](listener-walkthrough.md) for verification and limits.
+
 Made by Claude (Anthropic's AI assistant) in Claude Code on 5 November 2026, at Jamie's request.

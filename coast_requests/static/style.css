@@ -281,6 +281,25 @@ button {
 .demo-bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 auto 12px; max-width: 760px; padding: 10px 14px; border: 1px dashed currentColor; border-radius: 8px; }
 .demo-bar p { margin: 0; flex: 1 1 100%; }
 
+a.quiet-button { display: inline-flex; align-items: center; text-decoration: none; }
+.listener-demo { max-width: 42rem; margin: 2rem auto; padding: 0 1.25rem 2rem; }
+.listener-demo h2 { margin: .4rem 0; font-size: 1.75rem; }
+.demo-label { color: var(--navy); font-size: .85rem; font-weight: 700; letter-spacing: .06em; }
+.demo-note { margin: 1rem 0; color: var(--muted); font-size: .95rem; }
+.listener-demo form { display: grid; padding: 1.5rem; background: var(--card); border-radius: 12px; }
+.listener-demo label { margin-top: 1rem; font-weight: 700; }
+.listener-demo label:first-of-type { margin-top: 0; }
+.listener-demo label span { font-size: .9rem; font-weight: 400; color: var(--muted); }
+.listener-demo input, .listener-demo textarea { width: 100%; min-height: 3rem; margin-top: .35rem; padding: .5rem .75rem; border: 2px solid #5b6878; border-radius: 8px; font: inherit; }
+.listener-demo textarea { resize: vertical; }
+.success { padding: .75rem 1rem; border-left: 5px solid var(--green); background: #e4f3e9; }
+.request:target { outline: 3px solid var(--navy); outline-offset: 3px; scroll-margin-top: 1.5rem; }
+.request-text { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .top-bar { flex-wrap: wrap; }
+  .listener-demo form { padding: 1rem; }
+}
+
 /* Motion: quick and quiet. The board reloads itself during shows, so the list itself doesn't animate. */
 
 .big-button,
