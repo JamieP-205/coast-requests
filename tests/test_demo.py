@@ -18,8 +18,13 @@ def csrf(page):
     return re.search(r'name="csrf" value="([^"]+)"', page.get_data(as_text=True)).group(1)
 
 
-def start(app):
+VISITOR = [0]
+
+
+def start(app, address=None):
+    VISITOR[0] += 1
     client = app.test_client()
+    client.environ_base["HTTP_X_FORWARDED_FOR"] = address or f"10.0.0.{VISITOR[0] % 250}"
     page = client.get("/login")
     assert "Open the demo board" in page.get_data(as_text=True)
     response = client.post("/demo/start", data={"csrf": csrf(page)})
@@ -87,7 +92,17 @@ def test_a_full_demo_only_replaces_idle_boards(demo, monkeypatch):
 def test_one_address_cant_take_every_board(demo, monkeypatch):
     import coast_requests.demo as d
     monkeypatch.setattr(d, "CLIENT_LIVE_BOARDS", 2)
-    start(demo), start(demo)
+    start(demo, "10.7.0.1"), start(demo, "10.7.0.1")
     client = demo.test_client()
+    client.environ_base["HTTP_X_FORWARDED_FOR"] = "10.7.0.1, 10.0.0.9"
     page = client.get("/login")
     assert "busy" in client.post("/demo/start", data={"csrf": csrf(page)}, follow_redirects=True).get_data(as_text=True)
+
+
+def test_a_signed_in_session_without_a_board_is_signed_out(demo):
+    client = start(demo)
+    with client.session_transaction() as s:
+        s.pop("sandbox")
+    assert client.get("/").status_code == 302
+    with client.session_transaction() as s:
+        assert not s.get("signed_in")
