@@ -280,3 +280,38 @@ button {
 /* Public demo only */
 .demo-bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 auto 12px; max-width: 760px; padding: 10px 14px; border: 1px dashed currentColor; border-radius: 8px; }
 .demo-bar p { margin: 0; flex: 1 1 100%; }
+
+/* Motion: quick and quiet. The board reloads itself during shows, so the list itself doesn't animate. */
+
+.big-button,
+.played-button,
+.quiet-button {
+  transition: background-color 150ms ease-out, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.big-button:active,
+.played-button:active,
+.quiet-button:active {
+  transform: scale(0.97);
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.problem,
+details[open] > :not(summary) {
+  animation: settle 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
