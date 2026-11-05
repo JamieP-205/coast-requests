@@ -10,7 +10,7 @@ from coast_requests.demo import MAX_REQUESTS, create_demo_app
 @pytest.fixture
 def demo():
     app = create_demo_app()
-    app.config.update(TESTING=True, SESSION_COOKIE_SECURE=False)
+    app.config.update(TESTING=True, SESSION_COOKIE_SECURE=False, TRUSTED_PROXY_HOPS=1)
     return app
 
 
@@ -94,7 +94,7 @@ def test_one_address_cant_take_every_board(demo, monkeypatch):
     monkeypatch.setattr(d, "CLIENT_LIVE_BOARDS", 2)
     start(demo, "10.7.0.1"), start(demo, "10.7.0.1")
     client = demo.test_client()
-    client.environ_base["HTTP_X_FORWARDED_FOR"] = "10.7.0.1, 10.0.0.9"
+    client.environ_base["HTTP_X_FORWARDED_FOR"] = "10.0.0.9, 10.7.0.1"
     page = client.get("/login")
     assert "busy" in client.post("/demo/start", data={"csrf": csrf(page)}, follow_redirects=True).get_data(as_text=True)
 
@@ -106,3 +106,11 @@ def test_a_signed_in_session_without_a_board_is_signed_out(demo):
     assert client.get("/").status_code == 302
     with client.session_transaction() as s:
         assert not s.get("signed_in")
+
+
+def test_a_forged_earlier_address_cant_use_up_someone_elses_limit(demo, monkeypatch):
+    import coast_requests.demo as d
+    monkeypatch.setattr(d, "CLIENT_LIVE_BOARDS", 2)
+    start(demo, "10.5.0.1, 10.5.0.50")
+    start(demo, "10.5.0.1, 10.5.0.51")
+    start(demo, "10.5.0.1")

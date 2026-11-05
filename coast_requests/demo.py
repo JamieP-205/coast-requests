@@ -8,6 +8,7 @@ listener details or anything that affects the station.
 Run it with:  flask --app coast_requests.demo:create_demo_app run
 """
 
+import os
 import random
 import secrets
 import threading
@@ -56,7 +57,7 @@ class Sandboxes:
         self._starts = deque()
         self._lock = threading.Lock()
 
-    def create(self, client="unknown"):
+    def create(self, client=None):
         """Returns a new board's ID, or None if the demo can't take another right now."""
         now = time.monotonic()
         removed = []
@@ -67,9 +68,9 @@ class Sandboxes:
                     self._starts.popleft()
                 if len(self._starts) >= STARTS_PER_MINUTE:
                     return None
-                if sum(1 for _, c in self._starts if c == client) >= CLIENT_STARTS_PER_MINUTE:
-                    return None
-                if sum(1 for v in self._items.values() if v["client"] == client) >= CLIENT_LIVE_BOARDS:
+                if client is not None and (
+                        sum(1 for _, c in self._starts if c == client) >= CLIENT_STARTS_PER_MINUTE
+                        or sum(1 for v in self._items.values() if v["client"] == client) >= CLIENT_LIVE_BOARDS):
                     return None
                 if len(self._items) >= MAX_SANDBOXES:
                     # Full: a board nobody has used for a while gives way. Boards in use stay.
@@ -160,6 +161,8 @@ def create_demo_app():
         "NETLIFY_WEBHOOK_SECRET": "",
         "PERMANENT_SESSION_LIFETIME": timedelta(seconds=IDLE_SECONDS),
         "MAX_CONTENT_LENGTH": 16 * 1024,
+        # X-Forwarded-For entries added by trusted proxies, counted from the right. 0 = per-visitor limits off.
+        "TRUSTED_PROXY_HOPS": int(os.environ.get("TRUSTED_PROXY_HOPS", "0")),
     })
     db.session = db._make_scoped_session({"class_": SandboxSession})
     sandboxes = Sandboxes()
@@ -192,10 +195,13 @@ def create_demo_app():
             lock.release()
 
     def client_address():
-        # A best-effort key for the per-visitor limits. A visitor can forge it to dodge their own limit,
-        # but never to use up anyone else's; the overall caps still apply.
+        # Only the entry the hosting proxy adds (TRUSTED_PROXY_HOPS from the right) is used, so nobody can
+        # claim someone else's address. With no trusted hop set, per-visitor limits are off.
+        hops = app.config.get("TRUSTED_PROXY_HOPS", 0)
         forwarded = [a.strip() for a in request.headers.get("X-Forwarded-For", "").split(",") if a.strip()]
-        return forwarded[0] if forwarded else (request.remote_addr or "unknown")
+        if hops < 1 or len(forwarded) < hops:
+            return None
+        return forwarded[-hops]
 
     @bp.post("/demo/start")
     def start():
